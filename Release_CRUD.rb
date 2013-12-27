@@ -9,7 +9,7 @@ Description: This is a simple script for create/update/delete release. Once a ti
   
 =end
 
-require 'rally_api_emc_sso' 
+require 'rally_api' 
 require 'date'
 class Release_CRUD
   
@@ -164,4 +164,55 @@ def create_release(row)
   return true
 end
 
+def create_release_for_child(row)
+  #find_all_children(row["Project"])
+
+  puts "Creating..."
+  @array = []
+  results = find_all_children(row["Project"])
+  puts results
+
+  results.each do |result|
+#    result.read
+#    puts "Project : #{result.Name}"
+    
+    result = find_project("#{result.Name}")
+    @project = result.first
+    puts @project["_ref"]
+    field = {}
+    field["Name"] = row["Name"]
+    field["Project"] = @project["_ref"]
+    field["ReleaseStartDate"] = Date.strptime(row["Start Date"],'%m/%d/%Y').iso8601
+    field["ReleaseDate"] = Date.strptime(row["Release Date"],'%m/%d/%Y').iso8601
+    field["State"] = row["State"]
+    @rally.create("release",field)
+    puts "#{row["Name"]} created"
+    puts "\n"
+  end  
+
+end
+
+def find_all_children(project_name)
+    query = RallyAPI::RallyQuery.new()
+    query.type = :project
+    query.fetch = "Name,Children,State"
+    query.query_string = "((Name = \"#{project_name}\")AND(State = \"Open\"))"
+    result = @rally.find(query)
+    
+    result.each do |res|
+      res.read
+      #puts "Results :#{res}"
+      if(res.Children.results == nil)
+        @array.push(res)
+      else
+        @array.push(res)
+        res.Children.results.each{|c|
+          c.read
+          if (c.State == "Open")
+            find_all_children("#{c.Name}")            
+          end
+        }
+       end
+     end
+ end
 end

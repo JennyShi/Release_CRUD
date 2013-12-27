@@ -30,9 +30,12 @@ def start
         puts "Project #{@project}"
         puts "\n"
         
-        release_crud = Release_CRUD.new(@workspace, @project)
-        
-        @iCount = 0 #@iCount = 0 or rows.length-1
+        puts "Do you want to create iteration for child projects? 1. Yes\t 2. No"
+        request = gets.chomp
+        iteration_crud = Release_CRUD.new(@workspace, @project)
+        case request
+        when "1" #create for all children
+        #@iCount = 0 #@iCount = 0 or rows.length-1
      #   puts @rows[@iCount]
       #  puts @rows.length
         while @iCount < @rows.length
@@ -41,10 +44,26 @@ def start
             puts "Can't create , the same release exists!"
             puts "\n"
           else
-            release_crud.create_release(@rows[@iCount])
+           release_crud.create_release_for_child(@rows[@iCount])
           end
 
           @iCount += 1
+        end
+        
+        when "2" #create only for listed projects
+          #@iCount = 0 #@iCount = 0 or rows.length-1
+     #   puts @rows[@iCount]
+      #  puts @rows.length
+        while @iCount < @rows.length
+          result = release_crud.find_release(@rows[@iCount])
+          if (result.length != 0)
+            puts "Can't create , the same release exists!"
+            puts "\n"
+          else
+           release_crud.create_release(@rows[@iCount])
+          end
+          @iCount += 1
+        end
         end
 
       when "2" #update
